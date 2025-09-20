@@ -121,7 +121,7 @@ class FileService:
             org=org,
             ns=ns,
             name=name,
-            file_id=file.id
+            file_data=getattr(file, 'id', str(file)[:50])  # Flexible logging
         )
         
         return file

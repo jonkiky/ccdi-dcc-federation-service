@@ -9,7 +9,6 @@ from typing import List, Dict, Any, Optional, Tuple
 from neo4j import AsyncSession
 
 from app.core.logging import get_logger
-from app.lib.cypher_builder import CypherQueryBuilder, build_diagnosis_search_clauses
 from app.lib.field_allowlist import FieldAllowlist
 from app.models.dto import Sample
 from app.models.errors import UnsupportedFieldError
@@ -52,25 +51,45 @@ class SampleRepository:
             limit=limit
         )
         
-        # Validate filter fields
-        self._validate_filters(filters, "sample")
-        
-        # Build query
-        builder = CypherQueryBuilder()
+        # Build WHERE conditions and parameters
+        where_conditions = []
+        params = {"offset": offset, "limit": limit}
+        param_counter = 0
         
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "sample")
-            for clause in diagnosis_clauses:
-                builder.add_where(clause["where"], clause["params"])
+            where_conditions.append("""(
+                toLower(toString(s.diagnosis)) CONTAINS toLower($diagnosis_search_term)
+                OR ANY(key IN keys(s.metadata.unharmonized) 
+                       WHERE toLower(key) CONTAINS 'diagnos' 
+                       AND toLower(toString(s.metadata.unharmonized[key])) CONTAINS toLower($diagnosis_search_term))
+            )""")
+            params["diagnosis_search_term"] = search_term
         
         # Add regular filters
         for field, value in filters.items():
-            builder.add_filter("s", field, value, self.allowlist, "sample")
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+            
+            if isinstance(value, list):
+                where_conditions.append(f"s.{field} IN ${param_name}")
+            else:
+                where_conditions.append(f"s.{field} = ${param_name}")
+            params[param_name] = value
         
         # Build final query
-        cypher, params = builder.build_samples_query(offset, limit)
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        cypher = f"""
+        MATCH (s:sample)
+        {where_clause}
+        RETURN s
+        SKIP $offset
+        LIMIT $limit
+        """.strip()
         
         logger.info(
             "Executing get_samples Cypher query",
@@ -178,29 +197,49 @@ class SampleRepository:
             filters=filters
         )
         
-        # Validate field
-        if not self.allowlist.is_field_allowed("sample", field):
-            raise UnsupportedFieldError(f"Field '{field}' is not supported for counting")
-        
-        # Validate filter fields
-        self._validate_filters(filters, "sample")
-        
-        # Build query
-        builder = CypherQueryBuilder()
+        # Build WHERE conditions and parameters
+        where_conditions = [f"s.{field} IS NOT NULL"]
+        params = {}
+        param_counter = 0
         
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "sample")
-            for clause in diagnosis_clauses:
-                builder.add_where(clause["where"], clause["params"])
+            where_conditions.append("""(
+                toLower(toString(s.diagnosis)) CONTAINS toLower($diagnosis_search_term)
+                OR ANY(key IN keys(s.metadata.unharmonized) 
+                       WHERE toLower(key) CONTAINS 'diagnos' 
+                       AND toLower(toString(s.metadata.unharmonized[key])) CONTAINS toLower($diagnosis_search_term))
+            )""")
+            params["diagnosis_search_term"] = search_term
         
         # Add regular filters
         for filter_field, value in filters.items():
-            builder.add_filter("s", filter_field, value, self.allowlist, "sample")
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+            
+            if isinstance(value, list):
+                where_conditions.append(f"s.{filter_field} IN ${param_name}")
+            else:
+                where_conditions.append(f"s.{filter_field} = ${param_name}")
+            params[param_name] = value
         
-        # Build count query
-        cypher, params = builder.build_count_by_field_query("sample", field)
+        # Build final query
+        where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        cypher = f"""
+        MATCH (s:Sample)
+        {where_clause}
+        WITH s, 
+             CASE 
+               WHEN s.{field} IS NULL THEN []
+               WHEN NOT apoc.meta.type(s.{field}) = 'LIST' THEN [s.{field}]
+               ELSE s.{field}
+             END as field_values
+        UNWIND field_values as value
+        RETURN toString(value) as value, count(*) as count
+        ORDER BY count DESC, value ASC
+        """.strip()
         
         logger.info(
             "Executing count_samples_by_field Cypher query",
@@ -243,25 +282,43 @@ class SampleRepository:
         """
         logger.debug("Getting samples summary", filters=filters)
         
-        # Validate filter fields
-        self._validate_filters(filters, "sample")
-        
-        # Build query
-        builder = CypherQueryBuilder()
+        # Build WHERE conditions and parameters
+        where_conditions = []
+        params = {}
+        param_counter = 0
         
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "sample")
-            for clause in diagnosis_clauses:
-                builder.add_where(clause["where"], clause["params"])
+            where_conditions.append("""(
+                toLower(toString(s.diagnosis)) CONTAINS toLower($diagnosis_search_term)
+                OR ANY(key IN keys(s.metadata.unharmonized) 
+                       WHERE toLower(key) CONTAINS 'diagnos' 
+                       AND toLower(toString(s.metadata.unharmonized[key])) CONTAINS toLower($diagnosis_search_term))
+            )""")
+            params["diagnosis_search_term"] = search_term
         
         # Add regular filters
         for field, value in filters.items():
-            builder.add_filter("s", field, value, self.allowlist, "sample")
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+            
+            if isinstance(value, list):
+                where_conditions.append(f"s.{field} IN ${param_name}")
+            else:
+                where_conditions.append(f"s.{field} = ${param_name}")
+            params[param_name] = value
         
-        # Build summary query
-        cypher, params = builder.build_summary_query("sample")
+        # Build final query
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        cypher = f"""
+        MATCH (s:Sample)
+        {where_clause}
+        RETURN count(s) as total_count
+        """.strip()
         
         logger.info(
             "Executing get_samples_summary Cypher query",
@@ -302,42 +359,14 @@ class SampleRepository:
     
     def _record_to_sample(self, record: Dict[str, Any]) -> Sample:
         """
-        Convert a database record to a Sample object.
+        Convert a database record to a flexible Sample object.
         
         Args:
             record: Database record dictionary
             
         Returns:
-            Sample object
+            Sample object with flexible structure
         """
-        # Extract identifiers
-        identifiers = record.get("identifiers", [])
-        if isinstance(identifiers, str):
-            identifiers = [identifiers]
-        
-        # Extract anatomical sites (can be a list)
-        anatomical_sites = record.get("anatomical_sites", [])
-        if isinstance(anatomical_sites, str):
-            anatomical_sites = [anatomical_sites]
-        
-        # Build sample
-        return Sample(
-            id=record.get("id"),
-            identifiers=identifiers,
-            disease_phase=record.get("disease_phase"),
-            anatomical_sites=anatomical_sites,
-            library_selection_method=record.get("library_selection_method"),
-            library_strategy=record.get("library_strategy"),
-            library_source_material=record.get("library_source_material"),
-            preservation_method=record.get("preservation_method"),
-            tumor_grade=record.get("tumor_grade"),
-            specimen_molecular_analyte_type=record.get("specimen_molecular_analyte_type"),
-            tissue_type=record.get("tissue_type"),
-            tumor_classification=record.get("tumor_classification"),
-            age_at_diagnosis=record.get("age_at_diagnosis"),
-            age_at_collection=record.get("age_at_collection"),
-            tumor_tissue_morphology=record.get("tumor_tissue_morphology"),
-            depositions=record.get("depositions", []),
-            diagnosis=record.get("diagnosis"),
-            metadata=record.get("metadata", {})
-        )
+        # Create a Sample object with all fields from the record
+        # This allows for any field structure to be returned
+        return Sample(**record)

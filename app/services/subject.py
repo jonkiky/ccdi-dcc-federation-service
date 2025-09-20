@@ -121,7 +121,7 @@ class SubjectService:
             org=org,
             ns=ns,
             name=name,
-            subject_id=subject.id
+            subject_data=getattr(subject, 'id', str(subject)[:50])  # Flexible logging
         )
         
         return subject

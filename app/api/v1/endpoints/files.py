@@ -87,11 +87,9 @@ async def list_files(
         )
         
         # Add Link header for pagination
-        base_url = str(request.url.replace(query=""))
         link_header = build_link_header(
-            base_url=base_url,
-            query_params=dict(request.query_params),
-            pagination_info=pagination_info
+            request=request,
+            pagination=pagination_info
         )
         
         if link_header:
@@ -160,7 +158,7 @@ async def get_file(
             org=org,
             ns=ns,
             name=name,
-            file_id=file.id
+            file_data=getattr(file, 'id', str(file)[:50])  # Flexible logging
         )
         
         return file

@@ -102,10 +102,11 @@ def build_link_header(
     first_url = f"{base_url}?{urlencode(first_params)}"
     links.append(f'<{first_url}>; rel="first"')
     
-    # Last page (required)
-    last_params = {**query_params, 'page': pagination.total_pages, 'per_page': pagination.per_page}
-    last_url = f"{base_url}?{urlencode(last_params)}"
-    links.append(f'<{last_url}>; rel="last"')
+    # Last page (only if we have total_pages)
+    if pagination.total_pages is not None:
+        last_params = {**query_params, 'page': pagination.total_pages, 'per_page': pagination.per_page}
+        last_url = f"{base_url}?{urlencode(last_params)}"
+        links.append(f'<{last_url}>; rel="last"')
     
     # Previous page (optional)
     if pagination.has_prev:

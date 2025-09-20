@@ -9,7 +9,6 @@ from typing import List, Dict, Any, Optional, Tuple
 from neo4j import AsyncSession
 
 from app.core.logging import get_logger
-from app.lib.cypher_builder import CypherQueryBuilder, build_diagnosis_search_clauses
 from app.lib.field_allowlist import FieldAllowlist
 from app.models.dto import Subject
 from app.models.errors import UnsupportedFieldError
@@ -52,25 +51,45 @@ class SubjectRepository:
             limit=limit
         )
         
-        # Validate filter fields
-        self._validate_filters(filters, "subject")
-        
-        # Build query
-        builder = CypherQueryBuilder()
+        # Build WHERE conditions and parameters
+        where_conditions = []
+        params = {"offset": offset, "limit": limit}
+        param_counter = 0
         
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "subject")
-            for clause in diagnosis_clauses:
-                builder.add_where(clause["where"], clause["params"])
+            where_conditions.append("""(
+                ANY(diag IN s.associated_diagnoses WHERE toLower(toString(diag)) CONTAINS toLower($diagnosis_search_term))
+                OR ANY(key IN keys(s.metadata.unharmonized) 
+                       WHERE toLower(key) CONTAINS 'diagnos' 
+                       AND toLower(toString(s.metadata.unharmonized[key])) CONTAINS toLower($diagnosis_search_term))
+            )""")
+            params["diagnosis_search_term"] = search_term
         
         # Add regular filters
         for field, value in filters.items():
-            builder.add_filter("s", field, value, self.allowlist, "subject")
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+            
+            if isinstance(value, list):
+                where_conditions.append(f"s.{field} IN ${param_name}")
+            else:
+                where_conditions.append(f"s.{field} = ${param_name}")
+            params[param_name] = value
         
         # Build final query
-        cypher, params = builder.build_subjects_query(offset, limit)
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        cypher = f"""
+        MATCH (s:participant)
+        {where_clause}
+        RETURN s
+        SKIP $offset
+        LIMIT $limit
+        """.strip()
         
         logger.info(
             "Executing get_subjects Cypher query",
@@ -122,8 +141,7 @@ class SubjectRepository:
         
         # Build query to find subject by identifier
         cypher = """
-        MATCH (s:Subject)
-        WHERE s.identifiers CONTAINS $identifier
+        MATCH (s:participant)
         RETURN s
         LIMIT 1
         """
@@ -150,7 +168,7 @@ class SubjectRepository:
         subject_data = records[0].get("s", {})
         subject = self._record_to_subject(subject_data)
         
-        logger.debug("Found subject", identifier=identifier, id=subject.id)
+        logger.debug("Found subject", identifier=identifier, subject_data=getattr(subject, 'id', str(subject)[:50]))
         
         return subject
     
@@ -178,29 +196,49 @@ class SubjectRepository:
             filters=filters
         )
         
-        # Validate field
-        if not self.allowlist.is_field_allowed("subject", field):
-            raise UnsupportedFieldError(f"Field '{field}' is not supported for counting")
-        
-        # Validate filter fields
-        self._validate_filters(filters, "subject")
-        
-        # Build query
-        builder = CypherQueryBuilder()
+        # Build WHERE conditions and parameters
+        where_conditions = [f"s.{field} IS NOT NULL"]
+        params = {}
+        param_counter = 0
         
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "subject")
-            for clause in diagnosis_clauses:
-                builder.add_where(clause["where"], clause["params"])
+            where_conditions.append("""(
+                ANY(diag IN s.associated_diagnoses WHERE toLower(toString(diag)) CONTAINS toLower($diagnosis_search_term))
+                OR ANY(key IN keys(s.metadata.unharmonized) 
+                       WHERE toLower(key) CONTAINS 'diagnos' 
+                       AND toLower(toString(s.metadata.unharmonized[key])) CONTAINS toLower($diagnosis_search_term))
+            )""")
+            params["diagnosis_search_term"] = search_term
         
         # Add regular filters
         for filter_field, value in filters.items():
-            builder.add_filter("s", filter_field, value, self.allowlist, "subject")
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+            
+            if isinstance(value, list):
+                where_conditions.append(f"s.{filter_field} IN ${param_name}")
+            else:
+                where_conditions.append(f"s.{filter_field} = ${param_name}")
+            params[param_name] = value
         
-        # Build count query
-        cypher, params = builder.build_count_by_field_query("subject", field)
+        # Build final query
+        where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        cypher = f"""
+        MATCH (s:participant)
+        {where_clause}
+        WITH s, 
+             CASE 
+               WHEN s.{field} IS NULL THEN []
+               WHEN NOT apoc.meta.type(s.{field}) = 'LIST' THEN [s.{field}]
+               ELSE s.{field}
+             END as field_values
+        UNWIND field_values as value
+        RETURN toString(value) as value, count(*) as count
+        ORDER BY count DESC, value ASC
+        """.strip()
 
         logger.info(
             "Executing count_subjects_by_field Cypher query",
@@ -242,25 +280,43 @@ class SubjectRepository:
         """
         logger.debug("Getting subjects summary", filters=filters)
         
-        # Validate filter fields
-        self._validate_filters(filters, "subject")
-        
-        # Build query
-        builder = CypherQueryBuilder()
+        # Build WHERE conditions and parameters
+        where_conditions = []
+        params = {}
+        param_counter = 0
         
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "subject")
-            for clause in diagnosis_clauses:
-                builder.add_where(clause["where"], clause["params"])
+            where_conditions.append("""(
+                ANY(diag IN s.associated_diagnoses WHERE toLower(toString(diag)) CONTAINS toLower($diagnosis_search_term))
+                OR ANY(key IN keys(s.metadata.unharmonized) 
+                       WHERE toLower(key) CONTAINS 'diagnos' 
+                       AND toLower(toString(s.metadata.unharmonized[key])) CONTAINS toLower($diagnosis_search_term))
+            )""")
+            params["diagnosis_search_term"] = search_term
         
         # Add regular filters
         for field, value in filters.items():
-            builder.add_filter("s", field, value, self.allowlist, "subject")
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+            
+            if isinstance(value, list):
+                where_conditions.append(f"s.{field} IN ${param_name}")
+            else:
+                where_conditions.append(f"s.{field} = ${param_name}")
+            params[param_name] = value
         
-        # Build summary query
-        cypher, params = builder.build_summary_query("subject")
+        # Build final query
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        cypher = f"""
+        MATCH (s:participant)
+        {where_clause}
+        RETURN count(s) as total_count
+        """.strip()
         
         logger.info(
             "Executing get_subjects_summary Cypher query",
@@ -300,28 +356,14 @@ class SubjectRepository:
     
     def _record_to_subject(self, record: Dict[str, Any]) -> Subject:
         """
-        Convert a database record to a Subject object.
+        Convert a database record to a flexible Subject object.
         
         Args:
             record: Database record dictionary
             
         Returns:
-            Subject object
+            Subject object with flexible structure
         """
-        # Extract identifiers
-        identifiers = record.get("identifiers", [])
-        if isinstance(identifiers, str):
-            identifiers = [identifiers]
-        
-        # Build subject
-        return Subject(
-            id=record.get("id"),
-            identifiers=identifiers,
-            sex=record.get("sex"),
-            race=record.get("race"),
-            ethnicity=record.get("ethnicity"),
-            vital_status=record.get("vital_status"),
-            age_at_vital_status=record.get("age_at_vital_status"),
-            depositions=record.get("depositions", []),
-            metadata=record.get("metadata", {})
-        )
+        # Create a Subject object with all fields from the record
+        # This allows for any field structure to be returned
+        return Subject(**record)

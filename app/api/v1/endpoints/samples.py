@@ -162,7 +162,7 @@ async def get_sample(
             org=org,
             ns=ns,
             name=name,
-            sample_id=sample.id
+            sample_data=getattr(sample, 'id', str(sample)[:50])  # Flexible logging
         )
         
         return sample
@@ -324,11 +324,9 @@ async def search_samples_by_diagnosis(
         )
         
         # Add Link header
-        base_url = str(request.url.replace(query=""))
         link_header = build_link_header(
-            base_url=base_url,
-            query_params=dict(request.query_params),
-            pagination_info=pagination_info
+            request=request,
+            pagination=pagination_info
         )
         
         if link_header:

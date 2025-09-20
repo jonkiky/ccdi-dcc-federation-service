@@ -13,7 +13,7 @@ from app.core.config import Settings
 from app.core.logging import get_logger
 from app.core.cache import CacheService
 from app.lib.field_allowlist import FieldAllowlist
-from app.models.dto import Sample, SampleResponse, CountResponse, SummaryResponse
+from app.models.dto import Sample, CountResponse, SummaryResponse
 from app.models.errors import NotFoundError, ValidationError
 from app.repositories.sample import SampleRepository
 
@@ -121,7 +121,7 @@ class SampleService:
             org=org,
             ns=ns,
             name=name,
-            sample_id=sample.id
+            sample_data=getattr(sample, 'id', str(sample)[:50])  # Flexible logging
         )
         
         return sample

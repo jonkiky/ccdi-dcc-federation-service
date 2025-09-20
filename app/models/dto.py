@@ -318,30 +318,30 @@ class FileMetadata(CommonMetadata):
 # ============================================================================
 
 class Subject(BaseModel):
-    """Subject model."""
-    id: SubjectIdentifier = Field(..., description="Subject identifier")
-    kind: SubjectKind = Field(..., description="Subject kind")
-    gateways: Optional[List[GatewayOrReference]] = None
-    metadata: Optional[SubjectMetadata] = None
+    """Flexible subject model that can contain any fields."""
+    model_config = ConfigDict(extra="allow")
+    
+    # Allow any additional fields to be added dynamically
+    def __init__(self, **data):
+        super().__init__(**data)
 
 
 class Sample(BaseModel):
-    """Sample model."""
-    id: SampleIdentifier = Field(..., description="Sample identifier")
-    subject: SubjectIdentifier = Field(..., description="Associated subject identifier")
-    gateways: Optional[List[GatewayOrReference]] = None
-    metadata: Optional[SampleMetadata] = None
+    """Flexible sample model that can contain any fields."""
+    model_config = ConfigDict(extra="allow")
+    
+    # Allow any additional fields to be added dynamically
+    def __init__(self, **data):
+        super().__init__(**data)
 
 
 class File(BaseModel):
-    """File model."""
-    id: FileIdentifier = Field(..., description="File identifier")
-    samples: List[SampleIdentifier] = Field(
-        ..., 
-        description="Associated sample identifiers"
-    )
-    gateways: Optional[List[GatewayOrReference]] = None
-    metadata: Optional[FileMetadata] = None
+    """Flexible file model that can contain any fields."""
+    model_config = ConfigDict(extra="allow")
+    
+    # Allow any additional fields to be added dynamically
+    def __init__(self, **data):
+        super().__init__(**data)
 
 
 class Organization(BaseModel):
@@ -401,8 +401,10 @@ class SummaryResponse(BaseModel):
 
 
 class SubjectsResponse(BaseModel):
-    """Subjects list response."""
-    subjects: List[Subject] = Field(..., description="List of subjects")
+    """Flexible subjects list response that can accommodate any subject structure."""
+    model_config = ConfigDict(extra="allow")
+    
+    subjects: List[Subject] = Field(..., description="List of subjects with flexible structure")
     gateways: Optional[Dict[str, NamedGateway]] = Field(
         None,
         description="Named gateways referenced by subjects"
@@ -410,8 +412,10 @@ class SubjectsResponse(BaseModel):
 
 
 class SamplesResponse(BaseModel):
-    """Samples list response."""
-    samples: List[Sample] = Field(..., description="List of samples")
+    """Flexible samples list response that can accommodate any sample structure."""
+    model_config = ConfigDict(extra="allow")
+    
+    samples: List[Sample] = Field(..., description="List of samples with flexible structure")
     gateways: Optional[Dict[str, NamedGateway]] = Field(
         None,
         description="Named gateways referenced by samples"
@@ -419,8 +423,10 @@ class SamplesResponse(BaseModel):
 
 
 class FilesResponse(BaseModel):
-    """Files list response."""
-    files: List[File] = Field(..., description="List of files")
+    """Flexible files list response that can accommodate any file structure."""
+    model_config = ConfigDict(extra="allow")
+    
+    files: List[File] = Field(..., description="List of files with flexible structure")
     gateways: Optional[Dict[str, NamedGateway]] = Field(
         None,
         description="Named gateways referenced by files"
@@ -428,30 +434,63 @@ class FilesResponse(BaseModel):
 
 
 class SubjectResponse(BaseModel):
-    """Single subject response."""
-    subject: Subject = Field(..., description="Subject details")
+    """Flexible subject response that can handle both single subjects and lists with pagination."""
+    model_config = ConfigDict(extra="allow")
+    
+    # For single subject responses
+    # subject: Optional[Subject] = Field(None, description="Single subject details")
+    
+    # For multiple subject responses  
+    subjects: Optional[List[Subject]] = Field(None, description="List of subjects")
+    
+    # Common fields
     gateways: Optional[Dict[str, NamedGateway]] = Field(
         None,
-        description="Named gateways referenced by subject"
+        description="Named gateways referenced by subjects"
     )
+    
+    # For paginated responses
+    pagination: Optional[Any] = Field(None, description="Pagination information")
 
 
 class SampleResponse(BaseModel):
-    """Single sample response."""
-    sample: Sample = Field(..., description="Sample details")
+    """Flexible sample response that can handle both single samples and lists with pagination."""
+    model_config = ConfigDict(extra="allow")
+    
+    # For single sample responses
+    # sample: Optional[Sample] = Field(None, description="Single sample details")
+    
+    # For multiple sample responses  
+    samples: Optional[List[Sample]] = Field(None, description="List of samples")
+    
+    # Common fields
     gateways: Optional[Dict[str, NamedGateway]] = Field(
         None,
-        description="Named gateways referenced by sample"
+        description="Named gateways referenced by samples"
     )
+    
+    # For paginated responses
+    pagination: Optional[Any] = Field(None, description="Pagination information")
 
 
 class FileResponse(BaseModel):
-    """Single file response."""
-    file: File = Field(..., description="File details")
+    """Flexible file response that can handle both single files and lists with pagination."""
+    model_config = ConfigDict(extra="allow")
+    
+    # For single file responses
+    file: Optional[File] = Field(None, description="Single file details")
+    
+    # For multiple file responses  
+    files: Optional[List[File]] = Field(None, description="List of files")
+    
+    # Common fields
     gateways: Optional[Dict[str, NamedGateway]] = Field(
         None,
-        description="Named gateways referenced by file"
+        description="Named gateways referenced by files"
     )
+    
+    # For paginated responses
+    pagination: Optional[Any] = Field(None, description="Pagination information")
 
 
 class SubjectCountResponse(BaseModel):
