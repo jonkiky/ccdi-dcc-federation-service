@@ -2,6 +2,22 @@
 
 A REST API service for querying the CCDI (Childhood Cancer Data Initiative) graph database. This service provides endpoints for retrieving subjects, samples, files, and metadata from a Memgraph graph database.
 
+## 🎯 **Current Implementation Status**
+
+✅ **Fully Implemented**
+- Subject, Sample, File, Metadata, and Namespace endpoints
+- Redis-based caching with async support
+- Comprehensive error handling with proper HTTP status codes  
+- Structured logging and configuration management
+- FastAPI dependency injection architecture
+- Docker containerization and compose setup
+
+❌ **Pending Implementation**  
+- Organization endpoints (`/organization`, `/organization/{name}`)
+- Info endpoint (`/info`) 
+- Standalone diagnosis endpoints (`/sample-diagnosis`, `/subject-diagnosis`)
+- Code quality tooling (linting, formatting, type checking)
+
 ## Features
 
 - **REST API**: FastAPI-based service with automatic OpenAPI documentation
@@ -16,33 +32,48 @@ A REST API service for querying the CCDI (Childhood Cancer Data Initiative) grap
 
 ## Architecture
 
+**Current Implementation Structure:**
+
 ```
 ├── app/
 │   ├── api/v1/               # API layer
-│   │   ├── deps.py          # FastAPI dependencies
-│   │   └── endpoints/       # Route handlers
-│   ├── core/                # Core utilities
-│   │   ├── config.py        # Configuration management
-│   │   ├── logging.py       # Structured logging
-│   │   ├── pagination.py    # Pagination utilities
-│   │   └── cache.py         # Redis caching
-│   ├── db/                  # Database layer
-│   │   └── memgraph.py      # Memgraph connection
-│   ├── lib/                 # Shared libraries
-│   │   ├── cypher_builder.py # Query construction
-│   │   └── field_allowlist.py # Field validation
-│   ├── models/              # Data models
-│   │   ├── dto.py           # Pydantic models
-│   │   └── errors.py        # Error classes
-│   ├── repositories/        # Data access layer
-│   ├── services/            # Business logic layer
-│   └── main.py              # Application entry point
+│   │   ├── deps.py          # FastAPI dependencies (auth, pagination, filters)
+│   │   └── endpoints/       # ✅ Route handlers
+│   │       ├── subjects.py  # Subject endpoints + diagnosis search
+│   │       ├── samples.py   # Sample endpoints + diagnosis search  
+│   │       ├── files.py     # File endpoints
+│   │       ├── metadata.py  # Metadata field discovery
+│   │       └── namespaces.py # Namespace registry
+│   ├── core/                # ✅ Core utilities
+│   │   ├── config.py        # Comprehensive configuration management
+│   │   ├── logging.py       # Structured logging with correlation IDs
+│   │   ├── pagination.py    # RFC 5988 compliant pagination 
+│   │   └── cache.py         # Async Redis caching service
+│   ├── db/                  # ✅ Database layer
+│   │   └── memgraph.py      # Memgraph connection with lifecycle management
+│   ├── lib/                 # ✅ Shared libraries
+│   │   └── field_allowlist.py # Field validation and security
+│   ├── models/              # ✅ Data models
+│   │   ├── dto.py           # Pydantic request/response models
+│   │   └── errors.py        # Custom exception classes with HTTP mapping
+│   ├── repositories/        # ✅ Data access layer (Subject, Sample, File)
+│   ├── services/            # ✅ Business logic layer (with caching integration)
+│   └── main.py              # ✅ Application entry point with lifespan management
 ```
+
+### Key Architectural Features ✅
+- **Layered Architecture**: Clean separation between API, Service, and Repository layers
+- **Dependency Injection**: Extensive use of FastAPI dependencies for shared concerns  
+- **Async Support**: Full async/await implementation with async Redis
+- **Error Handling**: Custom exception hierarchy with automatic HTTP status mapping
+- **Caching Strategy**: Redis-based caching with configurable TTLs per endpoint type
+- **Configuration Management**: Nested settings with environment-specific overrides
 
 ## API Endpoints
 
-### Subjects
+### 📋 **Implemented Endpoints**
 
+#### Subjects ✅
 - `GET /api/v1/subject` - List subjects with pagination and filtering
 - `GET /api/v1/subject/{org}/{ns}/{name}` - Get specific subject by identifier
 - `GET /api/v1/subject/by/{field}/count` - Count subjects by field value
@@ -51,8 +82,42 @@ A REST API service for querying the CCDI (Childhood Cancer Data Initiative) grap
 - `GET /api/v1/subject/diagnosis/by/{field}/count` - Count subjects by field with diagnosis
 - `GET /api/v1/subject/diagnosis/summary` - Subject summary with diagnosis filtering
 
-### Health
+#### Samples ✅
+- `GET /api/v1/sample` - List samples with pagination and filtering
+- `GET /api/v1/sample/{org}/{ns}/{name}` - Get specific sample by identifier
+- `GET /api/v1/sample/by/{field}/count` - Count samples by field value
+- `GET /api/v1/sample/summary` - Get sample summary statistics
+- `GET /api/v1/sample/diagnosis/*` - Sample diagnosis endpoints (similar to subjects)
 
+#### Files ✅
+- `GET /api/v1/file` - List files with pagination and filtering
+- `GET /api/v1/file/{org}/{ns}/{name}` - Get specific file by identifier
+- `GET /api/v1/file/by/{field}/count` - Count files by field value
+- `GET /api/v1/file/summary` - Get file summary statistics
+
+#### Metadata ✅
+- `GET /api/v1/metadata/fields/subject` - Get filterable subject fields
+- `GET /api/v1/metadata/fields/sample` - Get filterable sample fields
+- `GET /api/v1/metadata/fields/file` - Get filterable file fields
+
+#### Namespaces ✅  
+- `GET /api/v1/namespace` - List available namespaces
+- `GET /api/v1/namespace/{organization}/{namespace}` - Get specific namespace info
+
+### 🚧 **Pending Implementation**
+
+#### Organizations ❌
+- `GET /api/v1/organization` - List organizations
+- `GET /api/v1/organization/{name}` - Get specific organization
+
+#### Server Info ❌
+- `GET /api/v1/info` - Server information and capabilities
+
+#### Standalone Diagnosis ❌  
+- `GET /api/v1/sample-diagnosis` - Standalone sample diagnosis search
+- `GET /api/v1/subject-diagnosis` - Standalone subject diagnosis search
+
+### Health & System ✅
 - `GET /health` - Service health check
 - `GET /` - Service information
 
@@ -151,26 +216,64 @@ The service uses environment variables for configuration. See `.env.example` for
 
 ### Key Configuration Sections
 
-#### Database (Memgraph)
+#### Application
 ```bash
-DB_URI=bolt://localhost:7687
-DB_USER=
-DB_PASSWORD=
-DB_DATABASE=memgraph
+APP_NAME="CCDI Federation Service"
+APP_VERSION="v1.2.0" 
+DEBUG=false
+HOST=0.0.0.0
+PORT=8000
 ```
 
-#### Cache (Redis)
+#### Database (Memgraph) ✅
+```bash
+MEMGRAPH_URI=bolt://localhost:7687
+MEMGRAPH_USER=
+MEMGRAPH_PASSWORD=  
+MEMGRAPH_DATABASE=memgraph
+MEMGRAPH_MAX_CONNECTION_LIFETIME=3600
+MEMGRAPH_MAX_CONNECTION_POOL_SIZE=50
+```
+
+#### Cache (Redis) ✅
 ```bash
 CACHE_ENABLED=true
 CACHE_REDIS_HOST=localhost
 CACHE_REDIS_PORT=6379
-CACHE_COUNT_TTL=300
+CACHE_REDIS_DB=0
+CACHE_REDIS_PASSWORD=
+CACHE_TTL_COUNT_ENDPOINTS=1800      # 30 minutes
+CACHE_TTL_SUMMARY_ENDPOINTS=900     # 15 minutes  
+CACHE_TTL_LIST_ENDPOINTS=300        # 5 minutes
 ```
 
-#### CORS
+#### CORS ✅
 ```bash
 CORS_ENABLED=true
-CORS_ALLOWED_ORIGINS=["http://localhost:3000"]
+CORS_ORIGINS=["*"]
+CORS_CREDENTIALS=true
+CORS_METHODS=["GET","POST","PUT","DELETE","OPTIONS"]  
+CORS_HEADERS=["*"]
+```
+
+#### Pagination ✅
+```bash
+DEFAULT_PAGE_SIZE=100
+MAX_PAGE_SIZE=1000
+PAGINATION_DEFAULT_PER_PAGE=20
+PAGINATION_MAX_PER_PAGE=100
+```
+
+#### Rate Limiting ✅
+```bash
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_REQUESTS_PER_MINUTE=60
+```
+
+#### Logging ✅
+```bash
+LOG_LEVEL=INFO
+LOG_FORMAT=json                     # json or text
 ```
 
 ## Development
@@ -186,21 +289,33 @@ The service follows a layered architecture:
 
 ### Adding New Endpoints
 
-1. **Create repository** in `app/repositories/`
-2. **Create service** in `app/services/`
-3. **Add routes** in `app/api/v1/endpoints/`
-4. **Update models** in `app/models/dto.py`
-5. **Include router** in `app/main.py`
+**Current implementation pattern:**
+
+1. **Create repository** in `app/repositories/` with Cypher queries
+2. **Create service** in `app/services/` with business logic and caching
+3. **Add routes** in `app/api/v1/endpoints/` with dependency injection
+4. **Update models** in `app/models/dto.py` for request/response schemas
+5. **Include router** in `app/main.py` setup_routers() function
+6. **Add dependencies** in `app/api/v1/deps.py` if needed
+
+**Example of missing Organization endpoint implementation:**
+```python
+# 1. app/repositories/organization.py
+# 2. app/services/organization.py  
+# 3. app/api/v1/endpoints/organizations.py
+# 4. Update app/main.py to include organization router
+```
 
 ### Code Quality
 
-The project uses several tools for code quality:
+**⚠️ Code quality tools are not yet configured in the current implementation.** 
 
+Planned tooling setup:
 ```bash
 # Format code
 poetry run black app/
 
-# Lint code
+# Lint code  
 poetry run ruff check app/
 
 # Type check
@@ -210,18 +325,42 @@ poetry run mypy app/
 poetry run pytest
 ```
 
+**Current Status:**
+- ❌ Black (code formatting) - Not configured
+- ❌ Ruff (linting) - Not configured  
+- ❌ MyPy (type checking) - Not configured
+- ❌ Pre-commit hooks - Not configured
+- 🔄 Pytest (testing) - Basic structure in place
+
 ## Testing
 
+**Current Status:** Basic test structure exists but needs implementation.
+
 ```bash
-# Run all tests
+# Run all tests (when implemented)
 poetry run pytest
 
-# Run with coverage
+# Run with coverage (when implemented)  
 poetry run pytest --cov=app --cov-report=html
 
-# Run specific test file
+# Run specific test file (when implemented)
 poetry run pytest tests/test_subjects.py
 ```
+
+**Test Structure in Place:**
+```
+tests/
+├── __init__.py              # ✅ Present
+├── unit/                    # 🔄 Structure ready 
+└── integration/             # 🔄 Structure ready
+```
+
+**Testing TODO:**
+- ❌ Unit tests for services, repositories, utilities
+- ❌ Integration tests for API endpoints  
+- ❌ Test fixtures and data setup
+- ❌ Mocking for external dependencies (Redis, Memgraph)
+- ❌ Contract testing against OpenAPI spec
 
 ## Data Model
 
@@ -298,49 +437,89 @@ Link: <http://localhost:8000/api/v1/subject?page=1&per_page=20>; rel="prev",
 
 ## Error Handling
 
-The API returns structured error responses:
+The API returns structured error responses matching the OpenAPI specification:
 
 ```json
 {
-  "error_code": "INVALID_PARAMETERS",
-  "message": "Invalid pagination parameters",
-  "details": {
-    "page": "Must be a positive integer",
-    "per_page": "Cannot exceed maximum of 100"
-  }
+  "errors": [
+    {
+      "kind": "InvalidParameters",
+      "message": "Invalid value for parameter 'page': Must be a positive integer",  
+      "parameters": ["page"],
+      "reason": "Unable to calculate offset"
+    }
+  ]
 }
 ```
 
+**Error Types (✅ Implemented):**
+- `InvalidParameters` (422) - Invalid query/path parameters
+- `UnsupportedField` (422) - Field not available for filtering/counting  
+- `NotFound` (404) - Entity not found by identifier
+- `UnshareableData` (404) - Data sharing restrictions
+- `InternalServerError` (500) - Server-side errors
+
+**Custom Exception Classes:**
+- `CCDIException` - Base exception with HTTP mapping
+- `InvalidParametersError` - Parameter validation failures
+- `UnsupportedFieldError` - Field allowlist violations
+- `NotFoundError` - Resource not found  
+- `UnshareableDataError` - Data sharing policy violations
+
 ## Monitoring
 
-### Health Checks
+### Health Checks ✅
 
 ```bash
 # Basic health check
 GET /health
-
 # Returns: {"status": "healthy", "service": "ccdi-federation-service"}
+
+# Service information
+GET /
+# Returns: {
+#   "service": "CCDI Federation Service", 
+#   "version": "1.0.0",
+#   "status": "running", 
+#   "docs": "/docs"
+# }
 ```
 
-### Logging
+### Logging ✅
 
-The service provides structured JSON logging:
+The service provides structured logging with configurable format:
 
+**JSON Format:**
 ```json
 {
-  "timestamp": "2024-01-15T10:30:00Z",
+  "timestamp": "2025-09-20T10:30:00Z",
   "level": "INFO", 
-  "message": "Request completed",
-  "path": "/api/v1/subject",
-  "method": "GET",
-  "status_code": 200,
-  "duration_ms": 45
+  "message": "List subjects request",
+  "filters": {"sex": "Male"},
+  "page": 1,
+  "per_page": 20,
+  "path": "/api/v1/subject"
 }
 ```
 
+**Log Features:**
+- ✅ Structured logging with correlation
+- ✅ Request/response logging
+- ✅ Error logging with stack traces  
+- ✅ Configurable log levels (DEBUG, INFO, WARNING, ERROR)
+- ✅ JSON or text format options
+
+### Caching Metrics ✅
+
+Cache operations are logged for monitoring:
+- Cache hits/misses
+- Cache set/delete operations  
+- Redis connection health
+- TTL expiration tracking
+
 ## Deployment
 
-### Production Environment
+### Production Environment ✅
 
 1. **Build Docker image**:
    ```bash
@@ -351,14 +530,69 @@ The service provides structured JSON logging:
    ```bash
    docker run -d \
      -p 8000:8000 \
-     -e APP_DEBUG=false \
-     -e DB_URI=bolt://your-memgraph:7687 \
+     -e DEBUG=false \
+     -e MEMGRAPH_URI=bolt://your-memgraph:7687 \
+     -e CACHE_REDIS_HOST=your-redis \
      ccdi-federation-service
    ```
 
+### Docker Compose (Development) ✅
+
+The included `docker-compose.yml` sets up:
+- ✅ FastAPI application
+- ✅ Memgraph database  
+- ✅ Redis cache
+- ✅ Development environment configuration
+
 ### Kubernetes
 
-Example deployment configuration available in `k8s/` directory.
+Example deployment configuration available in `k8s/` directory (if present).
+
+## 🛠️ **Development Roadmap**
+
+### High Priority ⏱️
+1. **Complete missing endpoints**:
+   - Organization registry (`/organization/*`)
+   - Server info (`/info`) 
+   - Standalone diagnosis endpoints
+
+2. **Code quality setup**:
+   - Configure linting (Ruff)
+   - Set up code formatting (Black)
+   - Add type checking (MyPy)  
+   - Pre-commit hooks
+
+3. **Test implementation**:
+   - Unit tests for services/repositories
+   - Integration tests for API endpoints
+   - Test fixtures and mocking
+
+### Medium Priority 📋
+1. **Documentation improvements**:
+   - OpenAPI spec validation
+   - API usage examples
+   - Deployment guides
+
+2. **Performance optimizations**:
+   - Query optimization
+   - Connection pooling tuning
+   - Cache strategy refinement
+
+3. **Observability enhancements**:
+   - Metrics collection (Prometheus)
+   - Distributed tracing  
+   - Performance monitoring
+
+### Low Priority 📝
+1. **Security enhancements**:
+   - Authentication/authorization
+   - API rate limiting per user
+   - Input sanitization hardening
+
+2. **Operational features**:
+   - Database migrations
+   - Backup strategies
+   - Monitoring dashboards
 
 ## Contributing
 
