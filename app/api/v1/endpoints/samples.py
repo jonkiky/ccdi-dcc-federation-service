@@ -27,6 +27,7 @@ from app.lib.field_allowlist import FieldAllowlist
 from app.models.dto import (
     Sample,
     SampleResponse,
+    SamplesResponse,
     CountResponse,
     SummaryResponse
 )
@@ -44,7 +45,7 @@ router = APIRouter(prefix="/sample", tags=["samples"])
 
 @router.get(
     "",
-    response_model=SampleResponse,
+    response_model=SamplesResponse,
     summary="List samples",
     description="Get a paginated list of samples with optional filtering"
 )
@@ -84,30 +85,30 @@ async def list_samples(
             page=pagination.page,
             per_page=pagination.per_page,
             total_pages=None,
-            total_count=None
+            total_items=len(samples),
+            has_next=len(samples) == pagination.per_page,  # If we got a full page, there might be more
+            has_prev=pagination.page > 1
         )
         
         # Add Link header for pagination
-        base_url = str(request.url.replace(query=""))
         link_header = build_link_header(
-            base_url=base_url,
-            query_params=dict(request.query_params),
-            pagination_info=pagination_info
+            request=request,
+            pagination=pagination_info,
+            extra_params=dict(request.query_params)
         )
         
         if link_header:
             response.headers["Link"] = link_header
         
-        # Build response
-        result = SampleResponse(
-            samples=samples,
-            pagination=pagination_info
-        )
-        
         logger.info(
             "List samples response",
             sample_count=len(samples),
             page=pagination.page
+        )
+        
+        # Build response
+        result = SamplesResponse(
+            samples=samples
         )
         
         return result

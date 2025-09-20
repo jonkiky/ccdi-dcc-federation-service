@@ -21,7 +21,7 @@ class AppSettings(BaseModel):
 
 class DatabaseSettings(BaseModel):
     """Database connection settings."""
-    uri: str = "bolt://localhost:7687"
+    uri: str = "bolt://127.0.0.1:7687"
     user: str = ""
     password: str = ""
     database: str = "memgraph"
@@ -165,8 +165,8 @@ class Settings(BaseSettings):
     )
     
     # Database settings
-    database_url: str = Field(default="bolt://localhost:7687", description="Database connection URL")
-    
+    database_url: str = Field(default="bolt://127.0.0.1:7687", description="Database connection URL")
+
     # Cache/Redis settings
     cache_redis_host: Optional[str] = Field(default="localhost", description="Redis host")
     cache_redis_port: Optional[int] = Field(default=6379, description="Redis port")

@@ -65,7 +65,7 @@ class FileRepository:
         # Build final query
         cypher, params = builder.build_files_query(offset, limit)
         
-        logger.debug(
+        logger.info(
             "Executing get_files Cypher query",
             cypher=cypher,
             params=params
@@ -125,7 +125,7 @@ class FileRepository:
         identifier = f"{org}.{ns}.{name}"
         params = {"identifier": identifier}
         
-        logger.debug(
+        logger.info(
             "Executing get_file_by_identifier Cypher query",
             cypher=cypher,
             params=params
@@ -188,7 +188,7 @@ class FileRepository:
         # Build count query
         cypher, params = builder.build_count_by_field_query("file", field)
         
-        logger.debug(
+        logger.info(
             "Executing count_files_by_field Cypher query",
             cypher=cypher,
             params=params
@@ -242,7 +242,7 @@ class FileRepository:
         # Build summary query
         cypher, params = builder.build_summary_query("file")
         
-        logger.debug(
+        logger.info(
             "Executing get_files_summary Cypher query",
             cypher=cypher,
             params=params

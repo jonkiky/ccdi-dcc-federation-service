@@ -72,7 +72,7 @@ class SubjectRepository:
         # Build final query
         cypher, params = builder.build_subjects_query(offset, limit)
         
-        logger.debug(
+        logger.info(
             "Executing get_subjects Cypher query",
             cypher=cypher,
             params=params
@@ -132,7 +132,7 @@ class SubjectRepository:
         identifier = f"{org}.{ns}.{name}"
         params = {"identifier": identifier}
         
-        logger.debug(
+        logger.info(
             "Executing get_subject_by_identifier Cypher query",
             cypher=cypher,
             params=params
@@ -202,7 +202,7 @@ class SubjectRepository:
         # Build count query
         cypher, params = builder.build_count_by_field_query("subject", field)
 
-        logger.debug(
+        logger.info(
             "Executing count_subjects_by_field Cypher query",
             cypher=cypher,
             params=params
@@ -262,7 +262,7 @@ class SubjectRepository:
         # Build summary query
         cypher, params = builder.build_summary_query("subject")
         
-        logger.debug(
+        logger.info(
             "Executing get_subjects_summary Cypher query",
             cypher=cypher,
             params=params

@@ -189,8 +189,11 @@ async def close_connection() -> None:
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a database session (async generator for dependency injection)."""
     connection = await get_connection()
-    async with connection.get_session() as session:
+    session = await connection.get_session()
+    try:
         yield session
+    finally:
+        await session.close()
 
 
 @asynccontextmanager

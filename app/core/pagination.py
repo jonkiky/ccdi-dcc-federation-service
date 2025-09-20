@@ -49,10 +49,10 @@ class PaginationInfo(BaseModel):
     
     page: int
     per_page: int
-    total_pages: int
-    total_items: int
-    has_next: bool
-    has_prev: bool
+    total_pages: Optional[int] = None
+    total_items: Optional[int] = None
+    has_next: Optional[bool] = None
+    has_prev: Optional[bool] = None
 
 
 def calculate_pagination_info(
@@ -64,8 +64,6 @@ def calculate_pagination_info(
     return PaginationInfo(
         page=page,
         per_page=per_page,
-        total_pages=total_pages,
-        total_items=total_items,
         has_next=page < total_pages,
         has_prev=page > 1
     )

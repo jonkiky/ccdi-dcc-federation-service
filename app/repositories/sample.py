@@ -72,7 +72,7 @@ class SampleRepository:
         # Build final query
         cypher, params = builder.build_samples_query(offset, limit)
         
-        logger.debug(
+        logger.info(
             "Executing get_samples Cypher query",
             cypher=cypher,
             params=params
@@ -132,7 +132,7 @@ class SampleRepository:
         identifier = f"{org}.{ns}.{name}"
         params = {"identifier": identifier}
         
-        logger.debug(
+        logger.info(
             "Executing get_sample_by_identifier Cypher query",
             cypher=cypher,
             params=params
@@ -202,7 +202,7 @@ class SampleRepository:
         # Build count query
         cypher, params = builder.build_count_by_field_query("sample", field)
         
-        logger.debug(
+        logger.info(
             "Executing count_samples_by_field Cypher query",
             cypher=cypher,
             params=params
@@ -263,7 +263,7 @@ class SampleRepository:
         # Build summary query
         cypher, params = builder.build_summary_query("sample")
         
-        logger.debug(
+        logger.info(
             "Executing get_samples_summary Cypher query",
             cypher=cypher,
             params=params
