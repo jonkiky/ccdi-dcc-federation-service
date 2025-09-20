@@ -388,6 +388,18 @@ class CountResult(BaseModel):
     count: int = Field(..., description="Count for this value")
 
 
+class CountResponse(BaseModel):
+    """Generic count response for field counting."""
+    field: str = Field(..., description="Field name that was counted")
+    counts: List[CountResult] = Field(..., description="Count results for field values")
+
+
+class SummaryResponse(BaseModel):
+    """Generic summary response model."""
+    total_count: int = Field(..., description="Total entity count")
+    # Add other summary fields as needed based on the summary data structure
+
+
 class SubjectsResponse(BaseModel):
     """Subjects list response."""
     subjects: List[Subject] = Field(..., description="List of subjects")
@@ -463,6 +475,12 @@ class FieldDescriptionsResponse(BaseModel):
         ...,
         description="Available metadata fields"
     )
+
+
+class MetadataFieldsResponse(BaseModel):
+    """Metadata fields response."""
+    harmonized: List[str] = Field(..., description="List of harmonized field names")
+    unharmonized: List[str] = Field(..., description="List of unharmonized field names")
 
 
 class NamespacesResponse(BaseModel):

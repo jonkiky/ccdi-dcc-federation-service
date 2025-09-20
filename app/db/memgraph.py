@@ -5,12 +5,13 @@ This module provides a connection pool and session management for Memgraph
 using the Neo4j Python driver (which is compatible with Memgraph).
 """
 
+from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from neo4j import AsyncGraphDatabase, AsyncDriver, AsyncSession
 from neo4j.exceptions import ServiceUnavailable, AuthError
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -190,3 +191,21 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     connection = await get_connection()
     async with connection.get_session() as session:
         yield session
+
+
+@asynccontextmanager
+async def memgraph_lifespan(settings: Settings):
+    """
+    Context manager for Memgraph lifespan.
+    
+    Args:
+        settings: Application settings
+    """
+    # Startup - initialize the connection
+    await get_connection()
+    
+    try:
+        yield
+    finally:
+        # Shutdown - close the connection
+        await close_connection()

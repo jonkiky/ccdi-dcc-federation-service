@@ -6,10 +6,62 @@ environment variables and .env files.
 """
 
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, List
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 from pydantic_settings import BaseSettings
+
+
+class AppSettings(BaseModel):
+    """Application-specific settings."""
+    name: str = "CCDI Federation Service"
+    version: str = "v1.2.0" 
+    debug: bool = False
+
+
+class DatabaseSettings(BaseModel):
+    """Database connection settings."""
+    uri: str = "bolt://localhost:7687"
+    user: str = ""
+    password: str = ""
+    database: str = "memgraph"
+    max_connection_lifetime: int = 3600
+    max_connection_pool_size: int = 50
+
+
+class CacheSettings(BaseModel):
+    """Cache and Redis settings."""
+    enabled: bool = True
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: str = ""
+    count_ttl: int = 300
+    summary_ttl: int = 600
+    ttl_count_endpoints: int = 1800
+    ttl_summary_endpoints: int = 900
+    ttl_list_endpoints: int = 300
+
+
+class CORSSettings(BaseModel):
+    """CORS configuration settings."""
+    enabled: bool = True
+    allowed_origins: List[str] = ["*"]
+    allow_credentials: bool = True
+    allowed_methods: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allowed_headers: List[str] = ["*"]
+    origins: List[str] = ["*"]
+    credentials: bool = True
+    methods: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    headers: List[str] = ["*"]
+
+
+class PaginationSettings(BaseModel):
+    """Pagination settings."""
+    default_per_page: int = 20
+    max_per_page: int = 100
+    default_page_size: int = 100
+    max_page_size: int = 1000
 
 
 class Settings(BaseSettings):
@@ -112,11 +164,100 @@ class Settings(BaseSettings):
         alias="CONTACT_EMAIL"
     )
     
-    class Config:
-        """Pydantic config."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    # Database settings
+    database_url: str = Field(default="bolt://localhost:7687", description="Database connection URL")
+    
+    # Cache/Redis settings
+    cache_redis_host: Optional[str] = Field(default="localhost", description="Redis host")
+    cache_redis_port: Optional[int] = Field(default=6379, description="Redis port")
+    cache_redis_db: Optional[int] = Field(default=0, description="Redis database")
+    cache_redis_password: Optional[str] = Field(default="", description="Redis password")
+    cache_count_ttl: Optional[int] = Field(default=300, description="Cache TTL for count queries")
+    cache_summary_ttl: Optional[int] = Field(default=600, description="Cache TTL for summary queries")
+    
+    # CORS settings
+    cors_enabled: Optional[bool] = Field(default=True, description="Enable CORS")
+    cors_allowed_origins: Optional[List[str]] = Field(default=["*"], description="CORS allowed origins")
+    cors_allow_credentials: Optional[bool] = Field(default=True, description="CORS allow credentials")
+    cors_allowed_methods: Optional[List[str]] = Field(default=["*"], description="CORS allowed methods")
+    cors_allowed_headers: Optional[List[str]] = Field(default=["*"], description="CORS allowed headers")
+    
+    # Pagination settings
+    pagination_default_per_page: Optional[int] = Field(default=20, description="Default items per page")
+    pagination_max_per_page: Optional[int] = Field(default=100, description="Maximum items per page")
+    
+    model_config = {
+        "extra": "allow",  # Allow extra fields that aren't defined
+        "env_file": ".env",
+        "case_sensitive": False
+    }
+    
+    # Nested settings properties
+    @property
+    def app(self) -> AppSettings:
+        """Get application settings."""
+        return AppSettings(
+            name=self.app_name,
+            version=self.app_version,
+            debug=self.debug
+        )
+    
+    @property
+    def database(self) -> DatabaseSettings:
+        """Get database settings."""
+        return DatabaseSettings(
+            uri=self.memgraph_uri,
+            user=self.memgraph_user,
+            password=self.memgraph_password,
+            database=self.memgraph_database,
+            max_connection_lifetime=self.memgraph_max_connection_lifetime,
+            max_connection_pool_size=self.memgraph_max_connection_pool_size
+        )
+    
+    @property
+    def cache(self) -> CacheSettings:
+        """Get cache settings."""
+        return CacheSettings(
+            enabled=self.cache_enabled,
+            redis_host=self.cache_redis_host or "localhost",
+            redis_port=self.cache_redis_port or 6379,
+            redis_db=self.cache_redis_db or 0,
+            redis_password=self.cache_redis_password or "",
+            count_ttl=self.cache_count_ttl or 300,
+            summary_ttl=self.cache_summary_ttl or 600,
+            ttl_count_endpoints=self.cache_ttl_count_endpoints,
+            ttl_summary_endpoints=self.cache_ttl_summary_endpoints,
+            ttl_list_endpoints=self.cache_ttl_list_endpoints
+        )
+    
+    @property
+    def cors(self) -> CORSSettings:
+        """Get CORS settings."""
+        return CORSSettings(
+            enabled=self.cors_enabled or True,
+            allowed_origins=self.cors_allowed_origins or ["*"],
+            allow_credentials=self.cors_allow_credentials or True,
+            allowed_methods=self.cors_allowed_methods or ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allowed_headers=self.cors_allowed_headers or ["*"],
+            origins=self.cors_origins,
+            credentials=self.cors_credentials,
+            methods=self.cors_methods,
+            headers=self.cors_headers
+        )
+    
+    @property
+    def pagination(self) -> PaginationSettings:
+        """Get pagination settings."""
+        return PaginationSettings(
+            default_per_page=self.pagination_default_per_page or 20,
+            max_per_page=self.pagination_max_per_page or 100,
+            default_page_size=self.default_page_size,
+            max_page_size=self.max_page_size
+        )
+
+
+# Create settings instance
+settings = Settings()
 
 
 @lru_cache()

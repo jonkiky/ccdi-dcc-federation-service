@@ -16,6 +16,10 @@ from app.core.logging import configure_logging, get_logger
 from app.core.cache import redis_lifespan
 from app.db.memgraph import memgraph_lifespan
 from app.api.v1.endpoints.subjects import router as subjects_router
+from app.api.v1.endpoints.samples import router as samples_router
+from app.api.v1.endpoints.files import router as files_router
+from app.api.v1.endpoints.metadata import router as metadata_router
+from app.api.v1.endpoints.namespaces import router as namespaces_router
 
 # Configure logging before creating the logger
 configure_logging()
@@ -94,6 +98,18 @@ def setup_routers(app: FastAPI) -> None:
     
     # Add subject routes
     app.include_router(subjects_router, prefix="/api/v1")
+    
+    # Add sample routes
+    app.include_router(samples_router, prefix="/api/v1")
+    
+    # Add file routes
+    app.include_router(files_router, prefix="/api/v1")
+    
+    # Add metadata routes
+    app.include_router(metadata_router, prefix="/api/v1")
+    
+    # Add namespace routes
+    app.include_router(namespaces_router, prefix="/api/v1")
     
     logger.info("API routers configured")
 

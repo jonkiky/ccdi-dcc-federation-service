@@ -1,0 +1,1134 @@
+{
+	"info": {
+		"_postman_id": "ccdi-federation-service",
+		"name": "CCDI Federation Service API",
+		"description": "REST API for querying CCDI graph database - Complete test collection for all endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "ccdi-federation-service"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "api_version",
+			"value": "v1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health & Info",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Basic health check endpoint"
+					}
+				},
+				{
+					"name": "Service Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Get service information and documentation links"
+					}
+				},
+				{
+					"name": "OpenAPI Spec",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/openapi.json",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"openapi.json"
+							]
+						},
+						"description": "Get OpenAPI specification"
+					}
+				}
+			],
+			"description": "Health checks and service information"
+		},
+		{
+			"name": "Subject Endpoints",
+			"item": [
+				{
+					"name": "List Subjects",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject"
+							]
+						},
+						"description": "Get paginated list of subjects"
+					}
+				},
+				{
+					"name": "List Subjects with Pagination",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject?page=1&per_page=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get subjects with custom pagination"
+					}
+				},
+				{
+					"name": "List Subjects with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject?sex=Male&race=White&page=1&per_page=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject"
+							],
+							"query": [
+								{
+									"key": "sex",
+									"value": "Male"
+								},
+								{
+									"key": "race",
+									"value": "White"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get subjects with sex and race filters"
+					}
+				},
+				{
+					"name": "List Subjects with Unharmonized Filter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject?metadata.unharmonized.custom_field=value1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject"
+							],
+							"query": [
+								{
+									"key": "metadata.unharmonized.custom_field",
+									"value": "value1"
+								}
+							]
+						},
+						"description": "Get subjects with unharmonized metadata filter"
+					}
+				},
+				{
+					"name": "Get Subject by Identifier",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/example-org/example-ns/subject-001",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"example-org",
+								"example-ns",
+								"subject-001"
+							]
+						},
+						"description": "Get specific subject by organization, namespace, and name"
+					}
+				},
+				{
+					"name": "Count Subjects by Sex",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/by/sex/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"by",
+								"sex",
+								"count"
+							]
+						},
+						"description": "Count subjects grouped by sex"
+					}
+				},
+				{
+					"name": "Count Subjects by Race with Filter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/by/race/count?sex=Female",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"by",
+								"race",
+								"count"
+							],
+							"query": [
+								{
+									"key": "sex",
+									"value": "Female"
+								}
+							]
+						},
+						"description": "Count subjects by race filtered by sex"
+					}
+				},
+				{
+					"name": "Subject Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"summary"
+							]
+						},
+						"description": "Get summary statistics for all subjects"
+					}
+				},
+				{
+					"name": "Subject Summary with Filter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/summary?ethnicity=Hispanic or Latino",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "ethnicity",
+									"value": "Hispanic or Latino"
+								}
+							]
+						},
+						"description": "Get summary statistics for subjects with ethnicity filter"
+					}
+				},
+				{
+					"name": "Search Subjects by Diagnosis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/diagnosis/search?search=leukemia",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"diagnosis",
+								"search"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "leukemia"
+								}
+							]
+						},
+						"description": "Search subjects by diagnosis term"
+					}
+				},
+				{
+					"name": "Search Subjects by Diagnosis with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/diagnosis/search?search=cancer&sex=Male&age_at_vital_status=10-15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"diagnosis",
+								"search"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "cancer"
+								},
+								{
+									"key": "sex",
+									"value": "Male"
+								},
+								{
+									"key": "age_at_vital_status",
+									"value": "10-15"
+								}
+							]
+						},
+						"description": "Search subjects by diagnosis with additional filters"
+					}
+				},
+				{
+					"name": "Count Subjects by Sex with Diagnosis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/diagnosis/by/sex/count?search=lymphoma",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"diagnosis",
+								"by",
+								"sex",
+								"count"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "lymphoma"
+								}
+							]
+						},
+						"description": "Count subjects by sex with diagnosis search"
+					}
+				},
+				{
+					"name": "Subject Summary with Diagnosis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/diagnosis/summary?search=brain tumor",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"diagnosis",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "brain tumor"
+								}
+							]
+						},
+						"description": "Get summary statistics for subjects with diagnosis search"
+					}
+				}
+			],
+			"description": "All subject-related endpoints with various filtering and search options"
+		},
+		{
+			"name": "Sample Endpoints",
+			"item": [
+				{
+					"name": "List Samples",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample"
+							]
+						},
+						"description": "Get paginated list of samples"
+					}
+				},
+				{
+					"name": "List Samples with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample?tissue_type=Tumor&library_strategy=RNA-Seq&page=1&per_page=15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample"
+							],
+							"query": [
+								{
+									"key": "tissue_type",
+									"value": "Tumor"
+								},
+								{
+									"key": "library_strategy",
+									"value": "RNA-Seq"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						},
+						"description": "Get samples with tissue type and library strategy filters"
+					}
+				},
+				{
+					"name": "Get Sample by Identifier",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/example-org/example-ns/sample-001",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"example-org",
+								"example-ns",
+								"sample-001"
+							]
+						},
+						"description": "Get specific sample by organization, namespace, and name"
+					}
+				},
+				{
+					"name": "Count Samples by Tissue Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/by/tissue_type/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"by",
+								"tissue_type",
+								"count"
+							]
+						},
+						"description": "Count samples grouped by tissue type"
+					}
+				},
+				{
+					"name": "Count Samples by Library Strategy with Filter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/by/library_strategy/count?disease_phase=Initial Diagnosis",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"by",
+								"library_strategy",
+								"count"
+							],
+							"query": [
+								{
+									"key": "disease_phase",
+									"value": "Initial Diagnosis"
+								}
+							]
+						},
+						"description": "Count samples by library strategy with disease phase filter"
+					}
+				},
+				{
+					"name": "Sample Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"summary"
+							]
+						},
+						"description": "Get summary statistics for all samples"
+					}
+				},
+				{
+					"name": "Search Samples by Diagnosis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/diagnosis/search?search=sarcoma",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"diagnosis",
+								"search"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "sarcoma"
+								}
+							]
+						},
+						"description": "Search samples by diagnosis term"
+					}
+				},
+				{
+					"name": "Count Samples by Anatomical Sites with Diagnosis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/diagnosis/by/anatomical_sites/count?search=neuroblastoma",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"diagnosis",
+								"by",
+								"anatomical_sites",
+								"count"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "neuroblastoma"
+								}
+							]
+						},
+						"description": "Count samples by anatomical sites with diagnosis search"
+					}
+				},
+				{
+					"name": "Sample Summary with Diagnosis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/sample/diagnosis/summary?search=medulloepithelioma",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"sample",
+								"diagnosis",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "medulloepithelioma"
+								}
+							]
+						},
+						"description": "Get summary statistics for samples with diagnosis search"
+					}
+				}
+			],
+			"description": "All sample-related endpoints with various filtering and search options"
+		},
+		{
+			"name": "File Endpoints",
+			"item": [
+				{
+					"name": "List Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file"
+							]
+						},
+						"description": "Get paginated list of files"
+					}
+				},
+				{
+					"name": "List Files with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file?type=BAM&size=>1000000&page=1&per_page=25",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "BAM"
+								},
+								{
+									"key": "size",
+									"value": ">1000000"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "25"
+								}
+							]
+						},
+						"description": "Get files with type and size filters"
+					}
+				},
+				{
+					"name": "Get File by Identifier",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file/example-org/example-ns/file-001.bam",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file",
+								"example-org",
+								"example-ns",
+								"file-001.bam"
+							]
+						},
+						"description": "Get specific file by organization, namespace, and name"
+					}
+				},
+				{
+					"name": "Count Files by Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file/by/type/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file",
+								"by",
+								"type",
+								"count"
+							]
+						},
+						"description": "Count files grouped by file type"
+					}
+				},
+				{
+					"name": "Count Files by Size Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file/by/size/count?type=FASTQ",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file",
+								"by",
+								"size",
+								"count"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "FASTQ"
+								}
+							]
+						},
+						"description": "Count files by size with type filter"
+					}
+				},
+				{
+					"name": "File Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file",
+								"summary"
+							]
+						},
+						"description": "Get summary statistics for all files"
+					}
+				},
+				{
+					"name": "File Summary with Filter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/file/summary?description=sequencing",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"file",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "description",
+									"value": "sequencing"
+								}
+							]
+						},
+						"description": "Get summary statistics for files with description filter"
+					}
+				}
+			],
+			"description": "All file-related endpoints with various filtering options"
+		},
+		{
+			"name": "Metadata Endpoints",
+			"item": [
+				{
+					"name": "Get Subject Metadata Fields",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/metadata/fields/subject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"metadata",
+								"fields",
+								"subject"
+							]
+						},
+						"description": "Get available metadata fields for subjects"
+					}
+				},
+				{
+					"name": "Get Sample Metadata Fields",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/metadata/fields/sample",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"metadata",
+								"fields",
+								"sample"
+							]
+						},
+						"description": "Get available metadata fields for samples"
+					}
+				},
+				{
+					"name": "Get File Metadata Fields",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/metadata/fields/file",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"metadata",
+								"fields",
+								"file"
+							]
+						},
+						"description": "Get available metadata fields for files"
+					}
+				}
+			],
+			"description": "Metadata endpoints for discovering available fields"
+		},
+		{
+			"name": "Namespace Endpoints",
+			"item": [
+				{
+					"name": "List Namespaces",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/namespace",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"namespace"
+							]
+						},
+						"description": "Get all available namespaces"
+					}
+				},
+				{
+					"name": "Get Namespace Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/namespace/example-org/example-ns",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"namespace",
+								"example-org",
+								"example-ns"
+							]
+						},
+						"description": "Get details for a specific namespace"
+					}
+				}
+			],
+			"description": "Namespace endpoints for organization and namespace information"
+		},
+		{
+			"name": "Error Handling Tests",
+			"item": [
+				{
+					"name": "Invalid Pagination - Negative Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject?page=-1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "-1"
+								}
+							]
+						},
+						"description": "Test error handling for invalid pagination parameters"
+					}
+				},
+				{
+					"name": "Exceeding Max Per Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject?per_page=1000",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "1000"
+								}
+							]
+						},
+						"description": "Test pagination limit enforcement"
+					}
+				},
+				{
+					"name": "Subject Not Found",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/nonexistent-org/nonexistent-ns/nonexistent-subject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"nonexistent-org",
+								"nonexistent-ns",
+								"nonexistent-subject"
+							]
+						},
+						"description": "Test 404 error handling for non-existent subject"
+					}
+				},
+				{
+					"name": "Invalid Field for Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/subject/by/invalid_field/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"subject",
+								"by",
+								"invalid_field",
+								"count"
+							]
+						},
+						"description": "Test error handling for unsupported field in count operation"
+					}
+				},
+				{
+					"name": "Namespace Not Found",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/{{api_version}}/namespace/nonexistent-org/nonexistent-ns",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"{{api_version}}",
+								"namespace",
+								"nonexistent-org",
+								"nonexistent-ns"
+							]
+						},
+						"description": "Test 404 error handling for non-existent namespace"
+					}
+				}
+			],
+			"description": "Test cases for error handling scenarios"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Basic response time check",
+					"pm.test(\"Response time is less than 5000ms\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"// Basic status code checks",
+					"if (pm.request.url.path.includes('nonexistent') || pm.request.url.query.get('page') === '-1') {",
+					"    pm.test(\"Error response has correct status\", function () {",
+					"        pm.expect(pm.response.code).to.be.oneOf([400, 404, 422]);",
+					"    });",
+					"} else {",
+					"    pm.test(\"Successful response\", function () {",
+					"        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+					"    });",
+					"}",
+					"",
+					"// Check for proper JSON response",
+					"pm.test(\"Response is JSON\", function () {",
+					"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+					"});",
+					"",
+					"// Check pagination Link header for list endpoints",
+					"if (pm.request.url.path.includes('/subject') && !pm.request.url.path.includes('/by/') && !pm.request.url.path.includes('/summary')) {",
+					"    pm.test(\"List endpoints may have Link header\", function () {",
+					"        // Link header is optional and depends on data",
+					"        if (pm.response.headers.has('Link')) {",
+					"            pm.expect(pm.response.headers.get('Link')).to.be.a('string');",
+					"        }",
+					"    });",
+					"}"
+				]
+			}
+		}
+	]
+}

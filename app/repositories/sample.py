@@ -1,7 +1,7 @@
 """
-Subject repository for the CCDI Federation Service.
+Sample repository for the CCDI Federation Service.
 
-This module provides data access operations for subjects
+This module provides data access operations for samples
 using Cypher queries to Memgraph.
 """
 
@@ -11,28 +11,28 @@ from neo4j import AsyncSession
 from app.core.logging import get_logger
 from app.lib.cypher_builder import CypherQueryBuilder, build_diagnosis_search_clauses
 from app.lib.field_allowlist import FieldAllowlist
-from app.models.dto import Subject
+from app.models.dto import Sample
 from app.models.errors import UnsupportedFieldError
 
 logger = get_logger(__name__)
 
 
-class SubjectRepository:
-    """Repository for subject data operations."""
+class SampleRepository:
+    """Repository for sample data operations."""
     
     def __init__(self, session: AsyncSession, allowlist: FieldAllowlist):
         """Initialize repository with database session and field allowlist."""
         self.session = session
         self.allowlist = allowlist
         
-    async def get_subjects(
+    async def get_samples(
         self,
         filters: Dict[str, Any],
         offset: int = 0,
         limit: int = 20
-    ) -> List[Subject]:
+    ) -> List[Sample]:
         """
-        Get paginated list of subjects with filtering.
+        Get paginated list of samples with filtering.
         
         Args:
             filters: Dictionary of field filters
@@ -40,20 +40,20 @@ class SubjectRepository:
             limit: Maximum number of records to return
             
         Returns:
-            List of Subject objects
+            List of Sample objects
             
         Raises:
             UnsupportedFieldError: If filter field is not allowed
         """
         logger.debug(
-            "Fetching subjects",
+            "Fetching samples",
             filters=filters,
             offset=offset,
             limit=limit
         )
         
         # Validate filter fields
-        self._validate_filters(filters, "subject")
+        self._validate_filters(filters, "sample")
         
         # Build query
         builder = CypherQueryBuilder()
@@ -61,19 +61,19 @@ class SubjectRepository:
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "subject")
+            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "sample")
             for clause in diagnosis_clauses:
                 builder.add_where(clause["where"], clause["params"])
         
         # Add regular filters
         for field, value in filters.items():
-            builder.add_filter("s", field, value, self.allowlist, "subject")
+            builder.add_filter("s", field, value, self.allowlist, "sample")
         
         # Build final query
-        cypher, params = builder.build_subjects_query(offset, limit)
+        cypher, params = builder.build_samples_query(offset, limit)
         
         logger.debug(
-            "Executing get_subjects Cypher query",
+            "Executing get_samples Cypher query",
             cypher=cypher,
             params=params
         )
@@ -82,47 +82,47 @@ class SubjectRepository:
         result = await self.session.run(cypher, params)
         records = await result.data()
         
-        # Convert to Subject objects
-        subjects = []
+        # Convert to Sample objects
+        samples = []
         for record in records:
-            subject_data = record.get("s", {})
-            subjects.append(self._record_to_subject(subject_data))
+            sample_data = record.get("s", {})
+            samples.append(self._record_to_sample(sample_data))
         
         logger.debug(
-            "Found subjects",
-            count=len(subjects),
+            "Found samples",
+            count=len(samples),
             filters=filters
         )
         
-        return subjects
+        return samples
     
-    async def get_subject_by_identifier(
+    async def get_sample_by_identifier(
         self,
         org: str,
         ns: str,
         name: str
-    ) -> Optional[Subject]:
+    ) -> Optional[Sample]:
         """
-        Get a specific subject by organization, namespace, and name.
+        Get a specific sample by organization, namespace, and name.
         
         Args:
             org: Organization identifier
             ns: Namespace identifier
-            name: Subject name/identifier
+            name: Sample name/identifier
             
         Returns:
-            Subject object or None if not found
+            Sample object or None if not found
         """
         logger.debug(
-            "Fetching subject by identifier",
+            "Fetching sample by identifier",
             org=org,
             ns=ns,
             name=name
         )
         
-        # Build query to find subject by identifier
+        # Build query to find sample by identifier
         cypher = """
-        MATCH (s:Subject)
+        MATCH (s:Sample)
         WHERE s.identifiers CONTAINS $identifier
         RETURN s
         LIMIT 1
@@ -133,34 +133,34 @@ class SubjectRepository:
         params = {"identifier": identifier}
         
         logger.debug(
-            "Executing get_subject_by_identifier Cypher query",
+            "Executing get_sample_by_identifier Cypher query",
             cypher=cypher,
             params=params
         )
-
+        
         # Execute query
         result = await self.session.run(cypher, params)
         records = await result.data()
         
         if not records:
-            logger.debug("Subject not found", identifier=identifier)
+            logger.debug("Sample not found", identifier=identifier)
             return None
         
-        # Convert to Subject object
-        subject_data = records[0].get("s", {})
-        subject = self._record_to_subject(subject_data)
+        # Convert to Sample object
+        sample_data = records[0].get("s", {})
+        sample = self._record_to_sample(sample_data)
         
-        logger.debug("Found subject", identifier=identifier, id=subject.id)
+        logger.debug("Found sample", identifier=identifier, id=sample.id)
         
-        return subject
+        return sample
     
-    async def count_subjects_by_field(
+    async def count_samples_by_field(
         self,
         field: str,
         filters: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """
-        Count subjects grouped by a specific field value.
+        Count samples grouped by a specific field value.
         
         Args:
             field: Field to group by and count
@@ -173,17 +173,17 @@ class SubjectRepository:
             UnsupportedFieldError: If field is not allowed
         """
         logger.debug(
-            "Counting subjects by field",
+            "Counting samples by field",
             field=field,
             filters=filters
         )
         
         # Validate field
-        if not self.allowlist.is_field_allowed("subject", field):
+        if not self.allowlist.is_field_allowed("sample", field):
             raise UnsupportedFieldError(f"Field '{field}' is not supported for counting")
         
         # Validate filter fields
-        self._validate_filters(filters, "subject")
+        self._validate_filters(filters, "sample")
         
         # Build query
         builder = CypherQueryBuilder()
@@ -191,22 +191,23 @@ class SubjectRepository:
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "subject")
+            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "sample")
             for clause in diagnosis_clauses:
                 builder.add_where(clause["where"], clause["params"])
         
         # Add regular filters
         for filter_field, value in filters.items():
-            builder.add_filter("s", filter_field, value, self.allowlist, "subject")
+            builder.add_filter("s", filter_field, value, self.allowlist, "sample")
         
         # Build count query
-        cypher, params = builder.build_count_by_field_query("subject", field)
-
+        cypher, params = builder.build_count_by_field_query("sample", field)
+        
         logger.debug(
-            "Executing count_subjects_by_field Cypher query",
+            "Executing count_samples_by_field Cypher query",
             cypher=cypher,
             params=params
         )
+        
         # Execute query
         result = await self.session.run(cypher, params)
         records = await result.data()
@@ -220,19 +221,19 @@ class SubjectRepository:
             })
         
         logger.debug(
-            "Completed subject count by field",
+            "Completed sample count by field",
             field=field,
             results_count=len(counts)
         )
         
         return counts
     
-    async def get_subjects_summary(
+    async def get_samples_summary(
         self,
         filters: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Get summary statistics for subjects.
+        Get summary statistics for samples.
         
         Args:
             filters: Filters to apply
@@ -240,10 +241,10 @@ class SubjectRepository:
         Returns:
             Dictionary with summary statistics
         """
-        logger.debug("Getting subjects summary", filters=filters)
+        logger.debug("Getting samples summary", filters=filters)
         
         # Validate filter fields
-        self._validate_filters(filters, "subject")
+        self._validate_filters(filters, "sample")
         
         # Build query
         builder = CypherQueryBuilder()
@@ -251,22 +252,23 @@ class SubjectRepository:
         # Handle diagnosis search
         if "_diagnosis_search" in filters:
             search_term = filters.pop("_diagnosis_search")
-            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "subject")
+            diagnosis_clauses = build_diagnosis_search_clauses(search_term, "sample")
             for clause in diagnosis_clauses:
                 builder.add_where(clause["where"], clause["params"])
         
         # Add regular filters
         for field, value in filters.items():
-            builder.add_filter("s", field, value, self.allowlist, "subject")
+            builder.add_filter("s", field, value, self.allowlist, "sample")
         
         # Build summary query
-        cypher, params = builder.build_summary_query("subject")
+        cypher, params = builder.build_summary_query("sample")
         
         logger.debug(
-            "Executing get_subjects_summary Cypher query",
+            "Executing get_samples_summary Cypher query",
             cypher=cypher,
             params=params
         )
+        
         # Execute query
         result = await self.session.run(cypher, params)
         records = await result.data()
@@ -275,7 +277,7 @@ class SubjectRepository:
             return {"total_count": 0}
         
         summary = records[0]
-        logger.debug("Completed subjects summary", total_count=summary.get("total_count", 0))
+        logger.debug("Completed samples summary", total_count=summary.get("total_count", 0))
         
         return summary
     
@@ -298,30 +300,44 @@ class SubjectRepository:
             if not self.allowlist.is_field_allowed(entity_type, field):
                 raise UnsupportedFieldError(f"Field '{field}' is not supported for {entity_type} filtering")
     
-    def _record_to_subject(self, record: Dict[str, Any]) -> Subject:
+    def _record_to_sample(self, record: Dict[str, Any]) -> Sample:
         """
-        Convert a database record to a Subject object.
+        Convert a database record to a Sample object.
         
         Args:
             record: Database record dictionary
             
         Returns:
-            Subject object
+            Sample object
         """
         # Extract identifiers
         identifiers = record.get("identifiers", [])
         if isinstance(identifiers, str):
             identifiers = [identifiers]
         
-        # Build subject
-        return Subject(
+        # Extract anatomical sites (can be a list)
+        anatomical_sites = record.get("anatomical_sites", [])
+        if isinstance(anatomical_sites, str):
+            anatomical_sites = [anatomical_sites]
+        
+        # Build sample
+        return Sample(
             id=record.get("id"),
             identifiers=identifiers,
-            sex=record.get("sex"),
-            race=record.get("race"),
-            ethnicity=record.get("ethnicity"),
-            vital_status=record.get("vital_status"),
-            age_at_vital_status=record.get("age_at_vital_status"),
+            disease_phase=record.get("disease_phase"),
+            anatomical_sites=anatomical_sites,
+            library_selection_method=record.get("library_selection_method"),
+            library_strategy=record.get("library_strategy"),
+            library_source_material=record.get("library_source_material"),
+            preservation_method=record.get("preservation_method"),
+            tumor_grade=record.get("tumor_grade"),
+            specimen_molecular_analyte_type=record.get("specimen_molecular_analyte_type"),
+            tissue_type=record.get("tissue_type"),
+            tumor_classification=record.get("tumor_classification"),
+            age_at_diagnosis=record.get("age_at_diagnosis"),
+            age_at_collection=record.get("age_at_collection"),
+            tumor_tissue_morphology=record.get("tumor_tissue_morphology"),
             depositions=record.get("depositions", []),
+            diagnosis=record.get("diagnosis"),
             metadata=record.get("metadata", {})
         )

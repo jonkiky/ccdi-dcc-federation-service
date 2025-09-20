@@ -120,6 +120,17 @@ class UnsupportedFieldError(CCDIException):
         )
 
 
+class ValidationError(CCDIException):
+    """General validation error for invalid input parameters."""
+    
+    def __init__(self, message: str):
+        super().__init__(
+            message=message,
+            kind=ErrorKind.INVALID_PARAMETERS,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+        )
+
+
 class NotFoundError(CCDIException):
     """Entity not found error."""
     
